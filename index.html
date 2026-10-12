@@ -36,6 +36,7 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;color:va
 #x{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:72px;height:72px;border:0;background:transparent;padding:0;z-index:5}
 html{background-color:var(--bg);transition:background-color .4s ease,color .3s ease}
 html.run{background-color:var(--red)}
+html{height:var(--H,100%);background-image:linear-gradient(to bottom,var(--bg) var(--g,0%),transparent var(--g,0%))}
 html.done{animation:rootblink 1.6s ease-in-out infinite}
 html.done #xr{display:none}
 html.done #xb svg{animation:xblink 1.6s ease-in-out infinite}
@@ -65,7 +66,7 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
-  var inp=$('d'),t=$('t'),start=$('start'),fill=$('fill'),gap=$('gap'),R=document.documentElement.classList;
+  var inp=$('d'),t=$('t'),start=$('start'),fill=$('fill'),gap=$('gap'),R=document.documentElement.classList,RS=document.documentElement.style;
   var digits='',raf=0,lock=null,t0=0,total=0;
 
   try{
@@ -136,8 +137,8 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
 
   function tick(now){
     var left=total-(now-t0);
-    if(left<=0){gap.style.height='0%';fill.style.height='100%';R.add('done');return}
-    var pc=left/total*100;fill.style.height=pc+'%';gap.style.height=(100-pc)+'%';
+    if(left<=0){RS.setProperty('--g','0%');gap.style.height='0%';fill.style.height='100%';R.add('done');return}
+    var pc=left/total*100;fill.style.height=pc+'%';gap.style.height=(100-pc)+'%';RS.setProperty('--g',(100-pc)+'%');
     raf=requestAnimationFrame(tick);
   }
 
@@ -149,14 +150,14 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
     var H=Math.floor(secs/3600),M=Math.floor(secs%3600/60),S=secs%60;
     digits=String(H*10000+M*100+S);inp.value=digits;render();
     inp.blur();
-    R.remove('done');fill.style.height='100%';gap.style.height='0%';
+    R.remove('done');fill.style.height='100%';gap.style.height='0%';RS.setProperty('--g','0%');
     document.body.classList.add('running');R.add('run');
     getLock();
     t0=performance.now();raf=requestAnimationFrame(tick);
   };
 
   $('x').onclick=function(){
-    cancelAnimationFrame(raf);R.remove('done','run');
+    cancelAnimationFrame(raf);R.remove('done','run');setTimeout(function(){if(!document.body.classList.contains('running'))RS.setProperty('--g','0%')},500);
     document.body.classList.remove('running');freeLock();
     digits='';inp.value='';render();
   };

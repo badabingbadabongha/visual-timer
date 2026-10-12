@@ -14,7 +14,7 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--fg:#f5f5f7}}
 :root[data-theme="dark"]{--bg:#000;--fg:#f5f5f7}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--bg);color:var(--fg);
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;color:var(--fg);
  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Helvetica Neue",Arial,sans-serif;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 #setup{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:36px;transition:opacity .4s ease,visibility .4s,transform .4s ease;
  padding:calc(env(safe-area-inset-top,0px) + 14vh) 24px 0}
@@ -27,15 +27,20 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;backgrou
 #start:disabled{opacity:.35}
 #start:active:not(:disabled){transform:scale(.97)}
 #run{position:fixed;inset:0;overflow:hidden;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .4s ease,visibility .4s}
-#fill{position:absolute;left:0;right:0;bottom:0;height:100%;background:var(--red);overflow:hidden}
-#fill.done{animation:blink 1.6s ease-in-out infinite}
-@keyframes blink{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+#gap{position:absolute;left:0;right:0;top:0;height:0;background:var(--bg)}
+#fill{position:absolute;left:0;right:0;bottom:0;height:100%;overflow:hidden}
 .xp{position:absolute;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);width:56px;height:56px;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .xp svg{width:28px;height:28px;stroke-width:3.4;stroke-linecap:round;fill:none}
 #xr svg{stroke:var(--red)}
 #xb svg{stroke:var(--bg)}
 #x{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:72px;height:72px;border:0;background:transparent;padding:0;z-index:5}
-html,body{transition:background-color .3s ease,color .3s ease}
+html{background-color:var(--bg);transition:background-color .4s ease,color .3s ease}
+html.run{background-color:var(--red)}
+html.done{animation:rootblink 1.6s ease-in-out infinite}
+html.done #xr{display:none}
+html.done #xb svg{animation:xblink 1.6s ease-in-out infinite}
+@keyframes rootblink{0%{background-color:var(--bg)}50%{background-color:var(--red)}100%{background-color:var(--bg)}}
+@keyframes xblink{0%{stroke:var(--red)}50%{stroke:var(--bg)}100%{stroke:var(--red)}}
 body.running #setup{opacity:0;visibility:hidden;pointer-events:none;transform:scale(.97)}
 body.running #run{opacity:1;visibility:visible;pointer-events:auto}
 #setup,#run{bottom:auto;height:var(--H,100%)}
@@ -49,6 +54,7 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
 </div>
 
 <div id="run">
+  <div id="gap"></div>
   <div class="xp" id="xr"><svg viewBox="0 0 28 28"><path d="M5 5l18 18M23 5L5 23"/></svg></div>
   <div id="fill">
     <div class="xp" id="xb"><svg viewBox="0 0 28 28"><path d="M5 5l18 18M23 5L5 23"/></svg></div>
@@ -59,7 +65,7 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
-  var inp=$('d'),t=$('t'),start=$('start'),fill=$('fill');
+  var inp=$('d'),t=$('t'),start=$('start'),fill=$('fill'),gap=$('gap'),R=document.documentElement.classList;
   var digits='',raf=0,lock=null,t0=0,total=0;
 
   try{
@@ -130,8 +136,8 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
 
   function tick(now){
     var left=total-(now-t0);
-    if(left<=0){fill.style.height='100%';fill.classList.add('done');return}
-    fill.style.height=(left/total*100)+'%';
+    if(left<=0){gap.style.height='0%';fill.style.height='100%';R.add('done');return}
+    var pc=left/total*100;fill.style.height=pc+'%';gap.style.height=(100-pc)+'%';
     raf=requestAnimationFrame(tick);
   }
 
@@ -143,14 +149,14 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
     var H=Math.floor(secs/3600),M=Math.floor(secs%3600/60),S=secs%60;
     digits=String(H*10000+M*100+S);inp.value=digits;render();
     inp.blur();
-    fill.classList.remove('done');fill.style.height='100%';
-    document.body.classList.add('running');
+    R.remove('done');fill.style.height='100%';gap.style.height='0%';
+    document.body.classList.add('running');R.add('run');
     getLock();
     t0=performance.now();raf=requestAnimationFrame(tick);
   };
 
   $('x').onclick=function(){
-    cancelAnimationFrame(raf);fill.classList.remove('done');
+    cancelAnimationFrame(raf);R.remove('done','run');
     document.body.classList.remove('running');freeLock();
     digits='';inp.value='';render();
   };

@@ -38,6 +38,7 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;backgrou
 html,body{transition:background-color .3s ease,color .3s ease}
 body.running #setup{opacity:0;visibility:hidden;pointer-events:none;transform:scale(.97)}
 body.running #run{opacity:1;visibility:visible;pointer-events:auto}
+#setup,#run{bottom:auto;height:var(--H,100%)}
 </style>
 </head>
 <body>
@@ -88,6 +89,18 @@ body.running #run{opacity:1;visibility:visible;pointer-events:auto}
   inp.addEventListener('focus',function(){inp.value=digits});
   render();inp.value=digits;
   try{inp.focus()}catch(e){}
+
+  // Höhe in Home-Bildschirm-Apps korrigieren (iOS liefert dort teils eine zu kleine Viewport-Höhe)
+  var root=document.documentElement;
+  function fit(){
+    var standalone=window.navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+    if(!standalone){root.style.removeProperty('--H');return}
+    var portrait=matchMedia('(orientation: portrait)').matches;
+    var sh=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
+    root.style.setProperty('--H',Math.max(window.innerHeight,sh)+'px');
+  }
+  fit();
+  ['resize','orientationchange','pageshow'].forEach(function(ev){window.addEventListener(ev,fit)});
 
   // Bildschirmsperre verhindern: Wake Lock + unsichtbares Mini-Video (wie bei einem laufenden Video in Safari)
   var vid=null;
